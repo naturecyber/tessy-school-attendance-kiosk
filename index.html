@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tessy International Schools - Interactive Kiosk & Portal</title>
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- PDF & CSV Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Chart.js for Admin Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase Web SDK (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' } }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Background Image Transition Effect for Sign-On Screen Only */
+    @keyframes bgSlide {
+      0%, 30% { background-image: url('2.jpg'); }
+      33%, 63% { background-image: url('3.jpg'); }
+      66%, 96% { background-image: url('1.jpg'); }
+      100% { background-image: url('2.jpg'); }
+    }
+    .dynamic-login-bg {
+      animation: bgSlide 18s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-800 min-h-screen flex flex-col relative overflow-x-hidden">
+
+  <!-- EDIT STUDENT MODAL -->
+  <div id="edit-student-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-3xl p-8 border shadow-2xl relative z-10">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+          <i class="fa-solid fa-user-pen"></i>
+        </div>
+        <h2 class="text-2xl font-extrabold text-slate-900">Edit Student Record</h2>
+        <p class="text-xs text-slate-500 mt-1">Update details for the selected student profile.</p>
+      </div>
+
+      <form onsubmit="saveEditedStudent(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="edit-original-id">
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider">Student ID (Read Only)</label>
+          <input type="text" id="edit-id" disabled class="w-full p-3 border border-slate-300 rounded-xl bg-slate-100 font-bold text-slate-500 cursor-not-allowed">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider">Full Name</label>
+          <input type="text" id="edit-name" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider">Class Grade</label>
+          <select id="edit-class" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <optgroup label="Nursery">
+              <option value="Toddler">Toddler</option>
+              <option value="Transition">Transition</option>
+              <option value="Nursery 1">Nursery 1</option>
+              <option value="Nursery 2">Nursery 2</option>
+            </optgroup>
+            <optgroup label="Primary School">
+              <option value="Basic 1">Basic 1</option>
+              <option value="Basic 2">Basic 2</option>
+              <option value="Basic 3">Basic 3</option>
+              <option value="Basic 4">Basic 4</option>
+              <option value="Basic 5">Basic 5</option>
+            </optgroup>
+            <optgroup label="Secondary School">
+              <option value="JSS 1A">JSS 1A</option>
+              <option value="JSS 1B">JSS 1B</option>
+              <option value="JSS 2A">JSS 2A</option>
+              <option value="JSS 2B">JSS 2B</option>
+              <option value="JSS 3A">JSS 3A</option>
+              <option value="JSS 3B">JSS 3B</option>
+              <option value="SS 1A">SS 1A</option>
+              <option value="SS 1B">SS 1B</option>
+              <option value="SS 2A">SS 2A</option>
+              <option value="SS 2B">SS 2B</option>
+              <option value="SS 3A">SS 3A</option>
+              <option value="SS 3B">SS 3B</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1 uppercase tracking-wider">Access PIN / Passcode (4-Digit)</label>
+          <input type="text" id="edit-pin" maxlength="4" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="closeEditStudentModal()" class="w-1/2 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition">
+            Cancel
+          </button>
+          <button type="submit" class="w-1/2 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition shadow-md">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- POPUP MODAL OVERLAY (TOUCH KIOSK GREETING & TIMER) -->
+  <div id="greeting-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="greeting-banner" class="w-full max-w-xl rounded-3xl p-8 border shadow-2xl text-center relative bg-white z-10">
+      
+      <!-- COUNTDOWN TIMER BADGE -->
+      <div class="absolute top-4 right-4 bg-slate-800/10 text-slate-700 font-bold text-xs px-3 py-1 rounded-full flex items-center gap-1.5">
+        <i class="fa-solid fa-spinner fa-spin text-brand-600"></i> Next student in <span id="countdown-timer" class="text-brand-600 font-black">5</span>s
+      </div>
+
+      <div id="banner-badge" class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider mb-4"></div>
+      <h2 id="banner-title" class="text-3xl font-extrabold mb-2 text-slate-900"></h2>
+      <p id="banner-subtitle" class="text-base font-medium text-slate-600 opacity-90"></p>
+      
+      <div id="banner-meta" class="mt-6 text-xs font-semibold pt-4 border-t border-slate-200/80 flex justify-center gap-6 text-slate-700"></div>
+
+      <button onclick="closeGreetingModal()" class="mt-6 px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition shadow-md">
+        Done (Next Student)
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <img src="logo.png" alt="Tessy International Schools Logo" class="w-12 h-12 object-contain rounded-lg border border-slate-100 shadow-sm" onerror="this.onerror=null; this.src='https://via.placeholder.com/48?text=TIS';">
+        <div>
+          <h1 class="font-bold text-slate-900 text-lg">Tessy International Schools</h1>
+          <p class="text-xs text-slate-500">Student Attendance Touch Kiosk & Admin Analytics</p>
+        </div>
+      </div>
+
+      <!-- MODE SWITCH TABS & ADMIN STATE -->
+      <div class="flex items-center gap-3">
+        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button id="tab-kiosk-btn" onclick="switchInterface('kiosk')" class="px-5 py-2 font-bold text-xs rounded-lg bg-brand-600 text-white shadow-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-desktop"></i> Kiosk
+          </button>
+          <button id="tab-admin-btn" onclick="requestAdminAccess()" class="px-5 py-2 font-bold text-xs rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center gap-2">
+            <i class="fa-solid fa-chart-line"></i> Admin Portal
+          </button>
+        </div>
+
+        <button id="admin-logout-btn" onclick="logoutAdmin()" class="hidden px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 relative z-10">
+
+    <!-- INTERFACE 1: LARGE TOUCHSCREEN ENTRANCE KIOSK (Background: 5.jpg spanning full viewport) -->
+    <div id="interface-kiosk" class="space-y-6 hidden fixed inset-0 top-[81px] z-30 overflow-y-auto p-4 sm:p-8 bg-cover bg-center flex flex-col items-center justify-start" style="background-image: url('5.jpg');">
+      <!-- Dark Overlay for Kiosk -->
+      <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-0"></div>
+
+      <div class="relative z-10 space-y-6 w-full max-w-2xl my-auto py-6">
+        <!-- Original Blue Banner Header -->
+        <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 rounded-3xl p-6 sm:p-8 text-center shadow-2xl text-white relative overflow-hidden border border-blue-500/30">
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent pointer-events-none"></div>
+          <div class="relative z-10">
+            <span class="inline-block px-4 py-1 mb-3 text-[11px] font-extrabold tracking-widest text-blue-200 uppercase bg-blue-800/80 rounded-full border border-blue-400/40 shadow-inner">
+              Excellence in Education
+            </span>
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white drop-shadow-md">
+              WELCOME TO TESSY INTERNATIONAL SCHOOLS
+            </h1>
+            <p class="text-xs sm:text-sm text-blue-200 font-medium mt-2">
+              Tap your 4-Digit Student ID or 4-Digit Passcode on the keypad below to check in
+            </p>
+          </div>
+        </div>
+
+        <!-- LATE TIME CONFIG BAR -->
+        <div class="bg-white/95 backdrop-blur-md p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs shadow-sm">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-clock text-amber-500 text-base"></i>
+            <span class="font-bold text-slate-700">Official Start Cutoff Time:</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="time" id="school-start-time" value="07:30" class="p-2 border rounded-lg font-bold bg-slate-50 text-slate-800">
+            <span class="text-slate-500 text-[11px]">(Scans after 07:30 AM flag as LATE)</span>
+          </div>
+        </div>
+
+        <!-- TOUCHSCREEN NUMBER PAD & DISPLAY (Larger & Prominent) -->
+        <div class="bg-white/95 backdrop-blur-md p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center">
+          <div class="w-full bg-slate-900 text-emerald-400 font-mono text-4xl font-extrabold p-5 rounded-2xl text-center tracking-widest shadow-inner mb-6 border-2 border-slate-700 min-h-[78px] flex items-center justify-center">
+            <span id="kiosk-id-display">TISS</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 w-full max-w-md">
+            <button onclick="pressKey('1')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">1</button>
+            <button onclick="pressKey('2')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">2</button>
+            <button onclick="pressKey('3')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">3</button>
+            
+            <button onclick="pressKey('4')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">4</button>
+            <button onclick="pressKey('5')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">5</button>
+            <button onclick="pressKey('6')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">6</button>
+            
+            <button onclick="pressKey('7')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">7</button>
+            <button onclick="pressKey('8')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">8</button>
+            <button onclick="pressKey('9')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">9</button>
+            
+            <button onclick="clearKeypad()" class="py-6 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-sm rounded-2xl shadow-md border border-rose-200 transition active:scale-95 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-rotate-left"></i> CLEAR
+            </button>
+            <button onclick="pressKey('0')" class="py-6 bg-slate-50 hover:bg-slate-100 active:bg-brand-500 active:text-white text-slate-900 font-extrabold text-3xl rounded-2xl shadow-md border border-slate-200 transition active:scale-95">0</button>
+            <button onclick="backspaceKey()" class="py-6 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xl rounded-2xl shadow-md border border-amber-200 transition active:scale-95 flex items-center justify-center">
+              <i class="fa-solid fa-delete-left"></i>
+            </button>
+          </div>
+
+          <button onclick="submitKioskTap()" class="w-full max-w-md mt-6 py-5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-lg rounded-2xl shadow-xl transition active:scale-95 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-circle-check text-xl"></i> ENTER ATTENDANCE
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERFACE 2: ADMIN ANALYTICAL PORTAL & MANAGEMENT (Background: 4.jpg) -->
+    <div id="interface-admin" class="hidden space-y-8 relative min-h-[85vh] rounded-3xl p-4 sm:p-6 overflow-hidden bg-cover bg-center" style="background-image: url('4.jpg');">
+      <!-- Dark Overlay for Admin Portal -->
+      <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-0"></div>
+
+      <div class="relative z-10 space-y-8">
+        
+        <!-- ANALYTICAL METRICS CONTROL BOARD -->
+        <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-6">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4">
+            <div>
+              <h2 class="font-extrabold text-slate-900 text-xl flex items-center gap-2">
+                <i class="fa-solid fa-chart-column text-brand-600"></i> Advanced Attendance Analytics
+              </h2>
+              <p class="text-xs text-slate-500">Real-time attendance metric performance across School-wide, Class, or Student scope.</p>
+            </div>
+
+            <!-- TIME & CLASS FILTERS -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 w-full md:w-auto text-xs font-semibold">
+              <select id="metric-scope" onchange="toggleScopeInputs()" class="p-2 border rounded-xl bg-slate-50 text-slate-800 font-bold">
+                <option value="daily">Daily Analysis</option>
+                <option value="weekly">Weekly Analysis</option>
+                <option value="monthly">Monthly Analysis</option>
+                <option value="termly">Termly Analysis</option>
+                <option value="yearly">Yearly Summary</option>
+                <option value="custom">Custom Date Range</option>
+              </select>
+
+              <select id="metric-class-scope" class="p-2 border rounded-xl bg-slate-50 text-slate-800 font-bold">
+                <option value="ALL">School-Wide</option>
+                <optgroup label="Nursery">
+                  <option value="Toddler">Toddler</option>
+                  <option value="Transition">Transition</option>
+                  <option value="Nursery 1">Nursery 1</option>
+                  <option value="Nursery 2">Nursery 2</option>
+                </optgroup>
+                <optgroup label="Primary School">
+                  <option value="Basic 1">Basic 1</option>
+                  <option value="Basic 2">Basic 2</option>
+                  <option value="Basic 3">Basic 3</option>
+                  <option value="Basic 4">Basic 4</option>
+                  <option value="Basic 5">Basic 5</option>
+                </optgroup>
+                <optgroup label="Secondary School">
+                  <option value="JSS 1A">JSS 1A</option>
+                  <option value="JSS 1B">JSS 1B</option>
+                  <option value="JSS 2A">JSS 2A</option>
+                  <option value="JSS 2B">JSS 2B</option>
+                  <option value="JSS 3A">JSS 3A</option>
+                  <option value="JSS 3B">JSS 3B</option>
+                  <option value="SS 1A">SS 1A</option>
+                  <option value="SS 1B">SS 1B</option>
+                  <option value="SS 2A">SS 2A</option>
+                  <option value="SS 2B">SS 2B</option>
+                  <option value="SS 3A">SS 3A</option>
+                  <option value="SS 3B">SS 3B</option>
+                </optgroup>
+              </select>
+
+              <input type="text" id="metric-student-id" placeholder="Student ID (Optional)" class="p-2 border rounded-xl uppercase bg-slate-50">
+
+              <div id="metric-date-box" class="col-span-1">
+                <input type="date" id="metric-date" class="w-full p-2 border rounded-xl bg-slate-50">
+              </div>
+
+              <div id="metric-range-box" class="hidden col-span-2 sm:col-span-1 flex gap-1">
+                <input type="date" id="metric-start-date" class="w-1/2 p-2 border rounded-xl bg-slate-50 text-[10px]">
+                <input type="date" id="metric-end-date" class="w-1/2 p-2 border rounded-xl bg-slate-50 text-[10px]">
+              </div>
+
+              <button onclick="calculateAnalytics()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-4 py-2 rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-bolt"></i> Update
+              </button>
+            </div>
+          </div>
+
+          <!-- STAT METRIC CARDS -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+              <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">Total Present</span>
+              <div id="stat-present" class="text-3xl font-extrabold text-emerald-900">0</div>
+              <span id="stat-present-rate" class="text-[11px] text-emerald-600 font-semibold mt-1 block">0% Attendance Rate</span>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <span class="text-xs font-bold text-amber-700 uppercase tracking-wider block mb-1">On-Time Arrivals</span>
+              <div id="stat-ontime" class="text-3xl font-extrabold text-amber-900">0</div>
+              <span id="stat-ontime-rate" class="text-[11px] text-amber-600 font-semibold mt-1 block">0% Punctuality</span>
+            </div>
+
+            <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+              <span class="text-xs font-bold text-rose-700 uppercase tracking-wider block mb-1">Late Arrivals</span>
+              <div id="stat-late" class="text-3xl font-extrabold text-rose-900">0</div>
+              <span id="stat-late-rate" class="text-[11px] text-rose-600 font-semibold mt-1 block">0% Off-Cutoff</span>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+              <span class="text-xs font-bold text-blue-700 uppercase tracking-wider block mb-1">Total Checked-Out</span>
+              <div id="stat-departed" class="text-3xl font-extrabold text-blue-900">0</div>
+              <span id="stat-departed-rate" class="text-[11px] text-blue-600 font-semibold mt-1 block">Departed Records</span>
+            </div>
+          </div>
+
+          <!-- VISUAL GRAPH METRICS -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            <div class="md:col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <h3 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider">Attendance Breakdown</h3>
+              <div class="h-64">
+                <canvas id="attendanceChart"></canvas>
+              </div>
+            </div>
+
+            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col justify-center items-center">
+              <h3 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wider text-center">Punctuality Ratio</h3>
+              <div class="w-48 h-48">
+                <canvas id="punctualityPieChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACADEMIC TERM SETUP MANAGEMENT -->
+        <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+          <h2 class="font-bold text-slate-900 text-base border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-calendar-days text-brand-600"></i> Configure Academic Terms & Dates
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 class="font-extrabold text-slate-800 mb-2">1st Term</h3>
+              <div class="space-y-2">
+                <div><label class="block text-slate-500 font-semibold">Start Date</label><input type="date" id="term1-start" class="w-full p-2 border rounded-lg bg-white"></div>
+                <div><label class="block text-slate-500 font-semibold">End Date</label><input type="date" id="term1-end" class="w-full p-2 border rounded-lg bg-white"></div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 class="font-extrabold text-slate-800 mb-2">2nd Term</h3>
+              <div class="space-y-2">
+                <div><label class="block text-slate-500 font-semibold">Start Date</label><input type="date" id="term2-start" class="w-full p-2 border rounded-lg bg-white"></div>
+                <div><label class="block text-slate-500 font-semibold">End Date</label><input type="date" id="term2-end" class="w-full p-2 border rounded-lg bg-white"></div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <h3 class="font-extrabold text-slate-800 mb-2">3rd Term</h3>
+              <div class="space-y-2">
+                <div><label class="block text-slate-500 font-semibold">Start Date</label><input type="date" id="term3-start" class="w-full p-2 border rounded-lg bg-white"></div>
+                <div><label class="block text-slate-500 font-semibold">End Date</label><input type="date" id="term3-end" class="w-full p-2 border rounded-lg bg-white"></div>
+              </div>
+            </div>
+          </div>
+          <button onclick="saveTermDates()" class="py-2.5 px-6 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> Save Term Calendar
+          </button>
+        </div>
+
+        <!-- STUDENT ENROLLMENT & BULK DELETION SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- STUDENT REGISTRATION FORM -->
+          <div class="lg:col-span-2 bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-5">
+            <h2 class="font-bold text-slate-900 text-base border-b pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-user-plus text-brand-600"></i> Register New Student Profile (Auto 4-Digit ID & Passcode)
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Student ID (Auto-Generated 4-Digit if blank)</label>
+                <input type="text" id="reg-id" maxlength="4" placeholder="Auto-generated (e.g. 4829)" class="w-full p-2.5 border border-slate-300 rounded-lg uppercase font-bold bg-white text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Full Name</label>
+                <input type="text" id="reg-name" placeholder="John Doe" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Class Grade</label>
+                <select id="reg-class" class="w-full p-2.5 border border-slate-300 rounded-lg font-semibold bg-white text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                  <optgroup label="Nursery">
+                    <option value="Toddler">Toddler</option>
+                    <option value="Transition">Transition</option>
+                    <option value="Nursery 1">Nursery 1</option>
+                    <option value="Nursery 2">Nursery 2</option>
+                  </optgroup>
+                  <optgroup label="Primary School">
+                    <option value="Basic 1">Basic 1</option>
+                    <option value="Basic 2">Basic 2</option>
+                    <option value="Basic 3">Basic 3</option>
+                    <option value="Basic 4">Basic 4</option>
+                    <option value="Basic 5">Basic 5</option>
+                  </optgroup>
+                  <optgroup label="Secondary School">
+                    <option value="JSS 1A">JSS 1A</option>
+                    <option value="JSS 1B">JSS 1B</option>
+                    <option value="JSS 2A">JSS 2A</option>
+                    <option value="JSS 2B">JSS 2B</option>
+                    <option value="JSS 3A">JSS 3A</option>
+                    <option value="JSS 3B">JSS 3B</option>
+                    <option value="SS 1A">SS 1A</option>
+                    <option value="SS 1B">SS 1B</option>
+                    <option value="SS 2A">SS 2A</option>
+                    <option value="SS 2B">SS 2B</option>
+                    <option value="SS 3A">SS 3A</option>
+                    <option value="SS 3B">SS 3B</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Passcode PIN (Auto-Generated 4-Digit if blank)</label>
+                <input type="text" id="reg-pin" maxlength="4" placeholder="Auto-generated (e.g. 5920)" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none font-bold">
+              </div>
+            </div>
+
+            <button onclick="handleEnrollment()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+              <i class="fa-solid fa-address-card text-base"></i> Save Student Profile
+            </button>
+
+            <p id="enroll-status" class="text-xs font-semibold text-center mt-2"></p>
+          </div>
+
+          <!-- BULK CLASS DELETE MANAGEMENT -->
+          <div class="bg-rose-50/90 backdrop-blur-md p-6 rounded-2xl border border-rose-200 shadow-xl space-y-4">
+            <h2 class="font-bold text-rose-900 text-base border-b border-rose-200 pb-2 flex items-center gap-2">
+              <i class="fa-solid fa-trash-can text-rose-600"></i> Class Student Management
+            </h2>
+            <p class="text-xs text-rose-700 leading-relaxed">
+              Select a specific class to remove or purge all enrolled students belonging to that class.
+            </p>
+
+            <div>
+              <label class="block font-bold text-xs text-rose-900 mb-1">Target Class to Clear</label>
+              <select id="delete-class-select" class="w-full p-2.5 border border-rose-300 rounded-xl font-bold bg-white text-slate-800 text-xs">
+                <optgroup label="Nursery">
+                  <option value="Toddler">Toddler</option>
+                  <option value="Transition">Transition</option>
+                  <option value="Nursery 1">Nursery 1</option>
+                  <option value="Nursery 2">Nursery 2</option>
+                </optgroup>
+                <optgroup label="Primary School">
+                  <option value="Basic 1">Basic 1</option>
+                  <option value="Basic 2">Basic 2</option>
+                  <option value="Basic 3">Basic 3</option>
+                  <option value="Basic 4">Basic 4</option>
+                  <option value="Basic 5">Basic 5</option>
+                </optgroup>
+                <optgroup label="Secondary School">
+                  <option value="JSS 1A">JSS 1A</option>
+                  <option value="JSS 1B">JSS 1B</option>
+                  <option value="JSS 2A">JSS 2A</option>
+                  <option value="JSS 2B">JSS 2B</option>
+                  <option value="JSS 3A">JSS 3A</option>
+                  <option value="JSS 3B">JSS 3B</option>
+                  <option value="SS 1A">SS 1A</option>
+                  <option value="SS 1B">SS 1B</option>
+                  <option value="SS 2A">SS 2A</option>
+                  <option value="SS 2B">SS 2B</option>
+                  <option value="SS 3A">SS 3A</option>
+                  <option value="SS 3B">SS 3B</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <button onclick="deleteStudentsInClass()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation"></i> Delete All Class Students
+            </button>
+          </div>
+
+        </div>
+
+        <!-- STUDENT DIRECTORY ROSTER (SEARCH, EDIT, DELETE & PDF ROSTER EXPORT) -->
+        <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+            <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
+              <i class="fa-solid fa-users text-brand-600"></i> Enrolled Student Directory
+            </h2>
+            
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <!-- SEARCH INPUT BAR -->
+              <div class="relative w-full sm:w-52">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="roster-search-input" onkeyup="filterRoster()" placeholder="Search name, ID, class..." class="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+              </div>
+
+              <!-- CLASS ATTENDANCE INFORMATION PDF EXPORT CONTROLS -->
+              <select id="roster-class-select" class="p-1.5 border border-slate-300 rounded-xl bg-slate-50 font-bold text-xs text-slate-800">
+                <optgroup label="Nursery">
+                  <option value="Toddler">Toddler</option>
+                  <option value="Transition">Transition</option>
+                  <option value="Nursery 1">Nursery 1</option>
+                  <option value="Nursery 2">Nursery 2</option>
+                </optgroup>
+                <optgroup label="Primary School">
+                  <option value="Basic 1">Basic 1</option>
+                  <option value="Basic 2">Basic 2</option>
+                  <option value="Basic 3">Basic 3</option>
+                  <option value="Basic 4">Basic 4</option>
+                  <option value="Basic 5">Basic 5</option>
+                </optgroup>
+                <optgroup label="Secondary School">
+                  <option value="JSS 1A">JSS 1A</option>
+                  <option value="JSS 1B">JSS 1B</option>
+                  <option value="JSS 2A">JSS 2A</option>
+                  <option value="JSS 2B">JSS 2B</option>
+                  <option value="JSS 3A">JSS 3A</option>
+                  <option value="JSS 3B">JSS 3B</option>
+                  <option value="SS 1A">SS 1A</option>
+                  <option value="SS 1B">SS 1B</option>
+                  <option value="SS 2A">SS 2A</option>
+                  <option value="SS 2B">SS 2B</option>
+                  <option value="SS 3A">SS 3A</option>
+                  <option value="SS 3B">SS 3B</option>
+                </optgroup>
+              </select>
+
+              <button onclick="exportClassRosterPDF()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> Download Class Attendance Information PDF
+              </button>
+
+              <span id="student-count-badge" class="text-xs bg-slate-100 font-bold px-3 py-1 rounded-full text-slate-600 whitespace-nowrap">0 Enrolled</span>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto max-h-[300px] border rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
+                <tr>
+                  <th class="p-3">Student ID (4-Digit)</th>
+                  <th class="p-3">Full Name</th>
+                  <th class="p-3">Class Grade</th>
+                  <th class="p-3">Passcode PIN (4-Digit)</th>
+                  <th class="p-3 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="student-roster-body" class="divide-y divide-slate-100">
+                <tr><td colspan="5" class="p-4 text-center text-slate-400">Loading student profiles...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DETAILED ATTENDANCE REPORT & EXPORT TABLE -->
+        <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+            <div id="report-summary" class="text-xs font-semibold text-slate-500">Ready to query...</div>
+            
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- INDIVIDUAL CLASS ATTENDANCE PDF EXPORTER -->
+              <select id="export-class-select" class="p-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-xs text-slate-800">
+                <optgroup label="Nursery">
+                  <option value="Toddler">Toddler</option>
+                  <option value="Transition">Transition</option>
+                  <option value="Nursery 1">Nursery 1</option>
+                  <option value="Nursery 2">Nursery 2</option>
+                </optgroup>
+                <optgroup label="Primary School">
+                  <option value="Basic 1">Basic 1</option>
+                  <option value="Basic 2">Basic 2</option>
+                  <option value="Basic 3">Basic 3</option>
+                  <option value="Basic 4">Basic 4</option>
+                  <option value="Basic 5">Basic 5</option>
+                </optgroup>
+                <optgroup label="Secondary School">
+                  <option value="JSS 1A">JSS 1A</option>
+                  <option value="JSS 1B">JSS 1B</option>
+                  <option value="JSS 2A">JSS 2A</option>
+                  <option value="JSS 2B">JSS 2B</option>
+                  <option value="JSS 3A">JSS 3A</option>
+                  <option value="JSS 3B">JSS 3B</option>
+                  <option value="SS 1A">SS 1A</option>
+                  <option value="SS 1B">SS 1B</option>
+                  <option value="SS 2A">SS 2A</option>
+                  <option value="SS 2B">SS 2B</option>
+                  <option value="SS 3A">SS 3A</option>
+                  <option value="SS 3B">SS 3B</option>
+                </optgroup>
+              </select>
+              
+              <button onclick="exportClassPDF()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> Download Attendance Class PDF
+              </button>
+
+              <button onclick="exportReport('csv')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+              <button onclick="exportReport('pdf')" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-file-pdf"></i> Export All PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto max-h-[350px] border rounded-xl mt-4">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
+                <tr>
+                  <th class="p-3">Student ID</th>
+                  <th class="p-3">Full Name</th>
+                  <th class="p-3">Class Grade</th>
+                  <th class="p-3">Date</th>
+                  <th class="p-3">Check In</th>
+                  <th class="p-3">Check Out</th>
+                  <th class="p-3">Punctuality</th>
+                </tr>
+              </thead>
+              <tbody id="report-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="p-4 text-center text-slate-400">Update Analytics filters above to view attendance records</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ADMIN LOGIN MODAL (THE GATE) WITH DYNAMIC IMAGE ROTATION BG (2.jpg, 3.jpg, 1.jpg) -->
+  <div id="admin-login-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center dynamic-login-bg">
+    <!-- Darker gradient overlay for ultimate readability & elegance -->
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-0"></div>
+
+    <div class="bg-white/95 backdrop-blur-md w-full max-w-md rounded-3xl p-8 border border-white/20 shadow-2xl relative z-10 transform transition-all">
+      
+      <!-- Appealing Sweet & Fun Header Logo Placement -->
+      <div class="text-center mb-6">
+        <div class="relative w-20 h-20 mx-auto mb-3">
+          <!-- Subtle glowing backdrop ring -->
+          <div class="absolute inset-0 bg-brand-500/20 rounded-full blur-md transform scale-110"></div>
+          <!-- Logo Container -->
+          <div class="relative w-20 h-20 bg-gradient-to-tr from-brand-50 to-emerald-100 rounded-2xl flex items-center justify-center p-2 border-2 border-brand-200 shadow-inner">
+            <img src="logo.png" alt="Tessy International Schools Logo" class="w-full h-full object-contain drop-shadow-sm" onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=TIS';">
+          </div>
+        </div>
+
+        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight uppercase">TESSY INTERNATIONAL SCHOOLS, PORT HARCOURT</h2>
+        <p class="text-xs text-slate-500 mt-1 font-medium">please sign in to access the school attendance kiosk and Admin portal</p>
+      </div>
+
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Admin Username</label>
+          <input type="text" id="admin-user" placeholder="admin" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Security Password</label>
+          <input type="password" id="admin-pass" placeholder="••••••••" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+        </div>
+
+        <p id="login-error-msg" class="text-xs text-rose-600 font-semibold text-center hidden"><i class="fa-solid fa-circle-exclamation"></i> Invalid Admin Credentials!</p>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-brand-600/20 active:scale-[0.98]">
+            Login Access
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ------------------------------------------------------------------
+    // FIREBASE INITIALIZATION
+    // ------------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhDcFIRavdq6ugaCTTNrS9GG4JZZ1AwpE",
+      authDomain: "tessyattendance-8ac71.firebaseapp.com",
+      databaseURL: "https://tessyattendance-8ac71-default-rtdb.firebaseio.com",
+      projectId: "tessyattendance-8ac71",
+      storageBucket: "tessyattendance-8ac71.firebasestorage.app",
+      messagingSenderId: "888086647285",
+      appId: "1:888086647285:web:1b588513b98a1fb70e50bc"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.database();
+    db.goOffline();
+    db.goOnline();
+
+    // APP GLOBAL STATES
+    let kioskBuffer = "";
+    let currentQueryResult = [];
+    let allEnrolledStudents = {}; 
+    let modalTimer = null;
+    let countdownVal = 5;
+    let isAdminAuthenticated = false;
+
+    let barChartInstance = null;
+    let pieChartInstance = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("metric-date").valueAsDate = new Date();
+      document.getElementById("metric-start-date").valueAsDate = new Date();
+      document.getElementById("metric-end-date").valueAsDate = new Date();
+      loadTermDates();
+      loadStudentRoster();
+      updateDisplay();
+
+      // THE GATE: Lock site immediately on load by showing login modal and hiding interfaces
+      document.getElementById("admin-login-modal").classList.remove("hidden");
+      document.getElementById("interface-kiosk").classList.add("hidden");
+      document.getElementById("interface-admin").classList.add("hidden");
+    });
+
+    // ------------------------------------------------------------------
+    // ADMIN AUTHENTICATION CONTROLS
+    // ------------------------------------------------------------------
+    function requestAdminAccess() {
+      if (isAdminAuthenticated) {
+        switchInterface('admin');
+      } else {
+        document.getElementById("admin-login-modal").classList.remove("hidden");
+      }
+    }
+
+    function closeAdminLoginModal() {
+      if (!isAdminAuthenticated) {
+        alert("Portal locked at the gate. Please log in with admin credentials.");
+        return;
+      }
+      document.getElementById("admin-login-modal").classList.add("hidden");
+      document.getElementById("login-error-msg").classList.add("hidden");
+    }
+
+    function handleAdminLogin(event) {
+      event.preventDefault();
+      const user = document.getElementById("admin-user").value.trim();
+      const pass = document.getElementById("admin-pass").value.trim();
+
+      if (user === "admin" && pass === "admin123") {
+        isAdminAuthenticated = true;
+        closeAdminLoginModal();
+        document.getElementById("admin-logout-btn").classList.remove("hidden");
+        switchInterface('kiosk');
+        calculateAnalytics();
+      } else {
+        document.getElementById("login-error-msg").classList.remove("hidden");
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminAuthenticated = false;
+      document.getElementById("admin-logout-btn").classList.add("hidden");
+      document.getElementById("interface-kiosk").classList.add("hidden");
+      document.getElementById("interface-admin").classList.add("hidden");
+      document.getElementById("admin-login-modal").classList.remove("hidden");
+      document.getElementById("admin-user").value = "";
+      document.getElementById("admin-pass").value = "";
+    }
+
+    // ------------------------------------------------------------------
+    // INTERFACE SWITCHING
+    // ------------------------------------------------------------------
+    function switchInterface(mode) {
+      const kioskView = document.getElementById("interface-kiosk");
+      const adminView = document.getElementById("interface-admin");
+      const kioskBtn = document.getElementById("tab-kiosk-btn");
+      const adminBtn = document.getElementById("tab-admin-btn");
+
+      if (mode === "kiosk") {
+        if (!isAdminAuthenticated) return requestAdminAccess();
+        kioskView.classList.remove("hidden");
+        adminView.classList.add("hidden");
+        kioskBtn.className = "px-5 py-2 font-bold text-xs rounded-lg bg-brand-600 text-white shadow-sm flex items-center gap-2";
+        adminBtn.className = "px-5 py-2 font-bold text-xs rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-2";
+      } else {
+        if (!isAdminAuthenticated) return requestAdminAccess();
+        adminView.classList.remove("hidden");
+        kioskView.classList.add("hidden");
+        adminBtn.className = "px-5 py-2 font-bold text-xs rounded-lg bg-brand-600 text-white shadow-sm flex items-center gap-2";
+        kioskBtn.className = "px-5 py-2 font-bold text-xs rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-2";
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // TOUCH KEYPAD, AUDIO ENGINE & SPEECH SYNTHESIS
+    // ------------------------------------------------------------------
+    function pressKey(val) {
+      if (kioskBuffer.length < 4) { 
+        kioskBuffer += val; 
+        updateDisplay(); 
+      }
+    }
+
+    function backspaceKey() {
+      kioskBuffer = kioskBuffer.slice(0, -1);
+      updateDisplay();
+    }
+
+    function clearKeypad() {
+      kioskBuffer = "";
+      updateDisplay();
+    }
+
+    function updateDisplay() {
+      document.getElementById("kiosk-id-display").innerText = kioskBuffer ? kioskBuffer : "----";
+    }
+
+    function playAttendanceJingle() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const melody = [523.25, 659.25, 783.99, 1046.50];
+        melody.forEach((freq, index) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime + index * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.1 + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + index * 0.1);
+          osc.stop(audioCtx.currentTime + index * 0.1 + 0.35);
+        });
+      } catch (err) { console.log(err); }
+    }
+
+    function playCustomVoice(studentName, mode) {
+      playAttendanceJingle();
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        
+        let message = "";
+        if (mode === "check-in") {
+          message = `HOS says WELCOME BACK, ${studentName}! Have an inspiring and productive day of learning.`;
+        } else {
+          message = `HOS says GOODBYE, ${studentName}! Remember to review your lessons and stay curious.`;
+        }
+
+        const speech = new SpeechSynthesisUtterance(message);
+        const voices = window.speechSynthesis.getVoices();
+
+        if (voices.length > 0) {
+          if (mode === "check-in") {
+            const maleVoice = voices.find(v => v.name.toLowerCase().includes("male") || v.name.toLowerCase().includes("david") || v.name.toLowerCase().includes("george"));
+            if (maleVoice) speech.voice = maleVoice;
+            speech.pitch = 1.05;
+            speech.rate = 0.98;
+          } else {
+            const femaleVoice = voices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("hazel") || v.name.toLowerCase().includes("google us english"));
+            if (femaleVoice) speech.voice = femaleVoice;
+            speech.pitch = 1.1;
+            speech.rate = 0.95;
+          }
+        } else {
+          speech.pitch = 1.0;
+          speech.rate = 0.95;
+        }
+
+        window.speechSynthesis.speak(speech);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // ATTENDANCE LOGGING PROCESSOR (IDENTIFIES BY 4-DIGIT ID OR 4-DIGIT PIN)
+    // ------------------------------------------------------------------
+    async function submitKioskTap() {
+      const inputVal = kioskBuffer.trim();
+      if (!inputVal || inputVal.length !== 4) {
+        alert("Please enter a valid 4-digit Student ID or 4-digit Passcode PIN.");
+        return;
+      }
+
+      const snapshot = await db.ref("students").once("value");
+      if (!snapshot.exists()) return alert("No enrolled students found. Register students first.");
+
+      const students = snapshot.val();
+      let student = null;
+
+      Object.keys(students).forEach(key => {
+        const s = students[key];
+        if (s.id === inputVal || s.pin === inputVal) {
+          student = s;
+        }
+      });
+
+      if (!student) {
+        alert(`No student found matching 4-digit code: ${inputVal}`);
+        clearKeypad();
+        return;
+      }
+
+      processAttendanceForStudent(student);
+      clearKeypad();
+    }
+
+    async function processAttendanceForStudent(student) {
+      const now = new Date();
+      const dateStr = now.toISOString().split("T")[0];
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const existingRef = db.ref(`attendance/${dateStr}/${student.id}`);
+      const existingSnap = await existingRef.once("value");
+
+      const cutoffTime = document.getElementById("school-start-time").value || "07:30";
+      const currentTimeString = now.toTimeString().slice(0, 5);
+      const isLate = currentTimeString > cutoffTime;
+
+      let mode = "check-in";
+      let statusLabel = isLate ? "Late Arrival" : "On Time";
+      let logTime = timeStr;
+
+      if (existingSnap.exists() && existingSnap.val().checkInTime) {
+        mode = "check-out";
+        const recordData = existingSnap.val();
+        if (recordData.checkOutTime && recordData.checkOutTime !== "---") {
+          logTime = recordData.checkOutTime;
+        } else {
+          await existingRef.update({ checkOutTime: timeStr });
+        }
+      } else {
+        await existingRef.set({
+          name: student.name,
+          class: student.class,
+          checkInTime: timeStr,
+          checkOutTime: "---",
+          punctuality: statusLabel
+        });
+      }
+
+      playCustomVoice(student.name, mode);
+      displayGreetingPopup(student, mode, logTime, isLate);
+      if (isAdminAuthenticated) calculateAnalytics();
+    }
+
+    function displayGreetingPopup(student, mode, timeStr, isLate) {
+      const modal = document.getElementById("greeting-modal");
+      const banner = document.getElementById("greeting-banner");
+      const badge = document.getElementById("banner-badge");
+      const title = document.getElementById("banner-title");
+      const subtitle = document.getElementById("banner-subtitle");
+      const meta = document.getElementById("banner-meta");
+
+      if (mode === "check-in") {
+        if (isLate) {
+          banner.className = "w-full max-w-xl rounded-3xl p-8 border-2 shadow-2xl text-center bg-rose-50 border-rose-300 text-rose-950";
+          badge.className = "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs uppercase bg-rose-200 text-rose-800";
+          badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> LATE ARRIVAL ALERT`;
+          title.innerText = `WELCOME BACK, ${student.name.toUpperCase()}!`;
+          subtitle.innerText = `You arrived after cutoff time. Please proceed promptly to class.`;
+        } else {
+          banner.className = "w-full max-w-xl rounded-3xl p-8 border-2 shadow-2xl text-center bg-emerald-50 border-emerald-300 text-emerald-950";
+          badge.className = "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs uppercase bg-emerald-200 text-emerald-800";
+          badge.innerHTML = `<i class="fa-solid fa-circle-check"></i> CHECKED IN ON TIME`;
+          title.innerText = `WELCOME BACK, ${student.name.toUpperCase()}!`;
+          subtitle.innerText = `Have an inspiring and productive day of learning.`;
+        }
+      } else {
+        banner.className = "w-full max-w-xl rounded-3xl p-8 border-2 shadow-2xl text-center bg-blue-50 border-blue-300 text-blue-950";
+        badge.className = "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs uppercase bg-blue-200 text-blue-800";
+        badge.innerHTML = `<i class="fa-solid fa-house-user"></i> CHECKED OUT (DEPARTURE)`;
+        title.innerText = `GOODBYE, ${student.name.toUpperCase()}!`;
+        subtitle.innerText = `Remember to review your lessons and stay curious. Safe journey home!`;
+      }
+
+      meta.innerHTML = `
+        <span><strong>Student ID:</strong> ${student.id}</span>
+        <span><strong>Class:</strong> ${student.class}</span>
+        <span><strong>Time:</strong> ${timeStr}</span>
+      `;
+
+      modal.classList.remove("hidden");
+      if (modalTimer) clearInterval(modalTimer);
+      countdownVal = 5;
+      document.getElementById("countdown-timer").innerText = countdownVal;
+
+      modalTimer = setInterval(() => {
+        countdownVal--;
+        document.getElementById("countdown-timer").innerText = countdownVal;
+        if (countdownVal <= 0) closeGreetingModal();
+      }, 1000);
+    }
+
+    function closeGreetingModal() {
+      if (modalTimer) clearInterval(modalTimer);
+      document.getElementById("greeting-modal").classList.add("hidden");
+      clearKeypad();
+    }
+
+    // ------------------------------------------------------------------
+    // AUTOMATIC UNIQUE 4-DIGIT ID AND 4-DIGIT PASSCODE GENERATOR
+    // ------------------------------------------------------------------
+    function generateUnique4DigitCode(existingStudents, fieldName) {
+      let candidate = "";
+      let isUnique = false;
+
+      while (!isUnique) {
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        candidate = randomNum.toString();
+
+        let collision = false;
+        if (existingStudents) {
+          Object.values(existingStudents).forEach(s => {
+            if (s.id === candidate || s.pin === candidate) {
+              collision = true;
+            }
+          });
+        }
+
+        if (!collision) {
+          isUnique = true;
+        }
+      }
+      return candidate;
+    }
+
+    async function handleEnrollment() {
+      const name = document.getElementById("reg-name").value.trim();
+      const cls = document.getElementById("reg-class").value;
+      let idInput = document.getElementById("reg-id").value.trim();
+      let pinInput = document.getElementById("reg-pin").value.trim();
+
+      if (!name) return alert("Please enter the student's Full Name.");
+
+      const statusElement = document.getElementById("enroll-status");
+      statusElement.innerText = "Checking student database...";
+
+      try {
+        const snapshot = await db.ref("students").once("value");
+        const students = snapshot.exists() ? snapshot.val() : {};
+
+        let finalId = idInput;
+        if (!finalId) {
+          finalId = generateUnique4DigitCode(students, 'id');
+        } else {
+          if (finalId.length !== 4) return alert("Student ID must be exactly 4 digits.");
+          let exists = Object.values(students).some(s => s.id === finalId);
+          if (exists) return alert(`Student ID "${finalId}" is already taken.`);
+        }
+
+        let finalPin = pinInput;
+        if (!finalPin) {
+          let tempStudentsWithId = { ...students, [finalId]: { id: finalId } };
+          finalPin = generateUnique4DigitCode(tempStudentsWithId, 'pin');
+        } else {
+          if (finalPin.length !== 4) return alert("Passcode PIN must be exactly 4 digits.");
+          let exists = Object.values(students).some(s => s.pin === finalPin || s.id === finalPin);
+          if (exists) return alert(`Passcode PIN "${finalPin}" is already taken.`);
+        }
+
+        await db.ref("students/" + finalId).set({ id: finalId, name, class: cls, pin: finalPin });
+        alert(`Student profile successfully created!\nAssigned 4-Digit ID: ${finalId}\nAssigned 4-Digit PIN: ${finalPin}\nName: ${name}`);
+        statusElement.innerText = `Student registered (ID: ${finalId}, PIN: ${finalPin})!`;
+        
+        document.getElementById("reg-id").value = "";
+        document.getElementById("reg-name").value = "";
+        document.getElementById("reg-pin").value = "";
+      } catch (err) {
+        alert("Failed to save student profile: " + err.message);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // STUDENT ROSTER, SEARCH, EDITING & DELETION MANAGEMENT
+    // ------------------------------------------------------------------
+    async function loadStudentRoster() {
+      db.ref("students").on("value", snapshot => {
+        allEnrolledStudents = snapshot.exists() ? snapshot.val() : {};
+        renderRosterTable(allEnrolledStudents);
+      });
+    }
+
+    function renderRosterTable(students) {
+      const rosterBody = document.getElementById("student-roster-body");
+      const badge = document.getElementById("student-count-badge");
+      rosterBody.innerHTML = "";
+
+      const studentKeys = Object.keys(students);
+      badge.innerText = `${studentKeys.length} Enrolled`;
+
+      if (studentKeys.length === 0) {
+        rosterBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No matching student records found.</td></tr>`;
+        return;
+      }
+
+      studentKeys.forEach(key => {
+        const s = students[key];
+        rosterBody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-bold text-slate-900 font-mono">${s.id}</td>
+            <td class="p-3 font-semibold text-slate-800">${s.name}</td>
+            <td class="p-3 text-slate-600 font-medium">${s.class}</td>
+            <td class="p-3 font-mono font-bold text-brand-700">${s.pin || '---'}</td>
+            <td class="p-3 text-center space-x-1">
+              <button onclick="openEditStudentModal('${s.id}')" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+              <button onclick="deleteSingleStudent('${s.id}', '${s.name}')" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-trash-can"></i> Delete
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterRoster() {
+      const query = document.getElementById("roster-search-input").value.trim().toLowerCase();
+      if (!query) {
+        renderRosterTable(allEnrolledStudents);
+        return;
+      }
+
+      const filtered = {};
+      Object.keys(allEnrolledStudents).forEach(key => {
+        const s = allEnrolledStudents[key];
+        const matchId = (s.id || "").toLowerCase().includes(query);
+        const matchName = (s.name || "").toLowerCase().includes(query);
+        const matchClass = (s.class || "").toLowerCase().includes(query);
+        const matchPin = (s.pin || "").toLowerCase().includes(query);
+
+        if (matchId || matchName || matchClass || matchPin) {
+          filtered[key] = s;
+        }
+      });
+
+      renderRosterTable(filtered);
+    }
+
+    async function openEditStudentModal(studentId) {
+      const snapshot = await db.ref(`students/${studentId}`).once("value");
+      if (!snapshot.exists()) return alert("Student record not found.");
+
+      const s = snapshot.val();
+      document.getElementById("edit-original-id").value = s.id;
+      document.getElementById("edit-id").value = s.id;
+      document.getElementById("edit-name").value = s.name;
+      document.getElementById("edit-class").value = s.class;
+      document.getElementById("edit-pin").value = s.pin || "";
+
+      document.getElementById("edit-student-modal").classList.remove("hidden");
+    }
+
+    function closeEditStudentModal() {
+      document.getElementById("edit-student-modal").classList.add("hidden");
+    }
+
+    async function saveEditedStudent(event) {
+      event.preventDefault();
+      const studentId = document.getElementById("edit-original-id").value;
+      const updatedName = document.getElementById("edit-name").value.trim();
+      const updatedClass = document.getElementById("edit-class").value;
+      const updatedPin = document.getElementById("edit-pin").value.trim();
+
+      if (!updatedName) return alert("Full Name cannot be empty.");
+      if (updatedPin.length !== 4) return alert("Passcode PIN must be exactly 4 digits.");
+
+      const snapshot = await db.ref("students").once("value");
+      if (snapshot.exists()) {
+        const allStudents = snapshot.val();
+        const duplicate = Object.keys(allStudents).some(id => id !== studentId && (allStudents[id].pin === updatedPin || allStudents[id].id === updatedPin));
+        if (duplicate) {
+          return alert(`Error: Passcode PIN "${updatedPin}" is already in use by another record.`);
+        }
+      }
+
+      await db.ref(`students/${studentId}`).update({
+        name: updatedName,
+        class: updatedClass,
+        pin: updatedPin
+      });
+
+      alert(`Student profile for ${updatedName} updated successfully!`);
+      closeEditStudentModal();
+    }
+
+    async function deleteSingleStudent(studentId, studentName) {
+      if (!confirm(`Are you sure you want to delete student "${studentName}" (${studentId})?`)) return;
+
+      await db.ref(`students/${studentId}`).remove();
+      alert(`Student profile for "${studentName}" has been permanently deleted.`);
+    }
+
+    async function deleteStudentsInClass() {
+      const selectedClass = document.getElementById("delete-class-select").value;
+      if (!confirm(`Are you sure you want to permanently delete ALL students enrolled in ${selectedClass}? This action cannot be undone.`)) {
+        return;
+      }
+
+      const snapshot = await db.ref("students").once("value");
+      if (!snapshot.exists()) return alert("No students found in the database.");
+
+      const students = snapshot.val();
+      let deleteCount = 0;
+
+      Object.keys(students).forEach(key => {
+        if (students[key].class === selectedClass) {
+          db.ref(`students/${key}`).remove();
+          deleteCount++;
+        }
+      });
+
+      alert(`Successfully deleted ${deleteCount} student(s) from class ${selectedClass}.`);
+    }
+
+    // ------------------------------------------------------------------
+    // EXPORT CLASS ATTENDANCE INFORMATION TO PDF
+    // ------------------------------------------------------------------
+    async function exportClassRosterPDF() {
+      const targetClass = document.getElementById("roster-class-select").value;
+
+      const snapshot = await db.ref("students").once("value");
+      if (!snapshot.exists()) return alert("No enrolled students found in database.");
+
+      const studentsData = snapshot.val();
+      const classStudents = Object.values(studentsData).filter(s => s.class === targetClass);
+
+      if (classStudents.length === 0) {
+        return alert(`No enrolled students found registered under class: ${targetClass}.`);
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text(`Tessy International Schools - Class Attendance Information Report`, 14, 15);
+      
+      doc.setFontSize(11);
+      doc.text(`Target Class Grade: ${targetClass}`, 14, 23);
+      doc.text(`Total Registered Students: ${classStudents.length}`, 14, 29);
+      doc.text(`Generated Date: ${new Date().toLocaleString()}`, 14, 35);
+
+      doc.autoTable({
+        startY: 40,
+        head: [['#', 'Student ID (4-Digit)', 'Full Name', 'Class Grade', 'Passcode PIN (4-Digit)']],
+        body: classStudents.map((s, idx) => [idx + 1, s.id, s.name, s.class, s.pin || '---']),
+        headStyles: { fillColor: [79, 70, 229] },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+      });
+
+      const safeClassName = targetClass.replace(/\s+/g, '_');
+      const filename = `Tessy_Class_Attendance_Information_${safeClassName}_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+    }
+
+    // ------------------------------------------------------------------
+    // ACADEMIC TERM MANAGEMENT
+    // ------------------------------------------------------------------
+    function saveTermDates() {
+      const termData = {
+        term1: { start: document.getElementById("term1-start").value, end: document.getElementById("term1-end").value },
+        term2: { start: document.getElementById("term2-start").value, end: document.getElementById("term2-end").value },
+        term3: { start: document.getElementById("term3-start").value, end: document.getElementById("term3-end").value }
+      };
+
+      db.ref("academic_terms").set(termData).then(() => {
+        alert("Academic Term Calendar successfully saved!");
+      });
+    }
+
+    function loadTermDates() {
+      db.ref("academic_terms").once("value", snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.term1) {
+            document.getElementById("term1-start").value = data.term1.start || "";
+            document.getElementById("term1-end").value = data.term1.end || "";
+          }
+          if (data.term2) {
+            document.getElementById("term2-start").value = data.term2.start || "";
+            document.getElementById("term2-end").value = data.term2.end || "";
+          }
+          if (data.term3) {
+            document.getElementById("term3-start").value = data.term3.start || "";
+            document.getElementById("term3-end").value = data.term3.end || "";
+          }
+        }
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // ADVANCED ATTENDANCE ANALYTICS ENGINE
+    // ------------------------------------------------------------------
+    function toggleScopeInputs() {
+      const scope = document.getElementById("metric-scope").value;
+      const dateBox = document.getElementById("metric-date-box");
+      const rangeBox = document.getElementById("metric-range-box");
+
+      if (scope === "custom") {
+        dateBox.classList.add("hidden");
+        rangeBox.classList.remove("hidden");
+      } else {
+        dateBox.classList.remove("hidden");
+        rangeBox.classList.add("hidden");
+      }
+    }
+
+    function calculateAnalytics() {
+      const scope = document.getElementById("metric-scope").value;
+      const classFilter = document.getElementById("metric-class-scope").value;
+      const studentFilter = document.getElementById("metric-student-id").value.trim();
+
+      const singleDate = document.getElementById("metric-date").value;
+      const startDate = document.getElementById("metric-start-date").value;
+      const endDate = document.getElementById("metric-end-date").value;
+
+      db.ref("attendance").once("value", snapshot => {
+        if (!snapshot.exists()) return renderAnalyticsUI([], scope);
+
+        const allLogs = snapshot.val();
+        currentQueryResult = [];
+
+        Object.keys(allLogs).forEach(dateKey => {
+          let dateMatch = false;
+
+          if (scope === "daily" && dateKey === singleDate) dateMatch = true;
+          if (scope === "weekly" && isDateInSameWeek(dateKey, singleDate)) dateMatch = true;
+          if (scope === "monthly" && dateKey.startsWith(singleDate.slice(0, 7))) dateMatch = true;
+          if (scope === "yearly" && dateKey.startsWith(singleDate.slice(0, 4))) dateMatch = true;
+          if (scope === "termly" && dateKey.startsWith(singleDate.slice(0, 4))) dateMatch = true;
+          if (scope === "custom" && dateKey >= startDate && dateKey <= endDate) dateMatch = true;
+
+          if (dateMatch) {
+            const dailyData = allLogs[dateKey];
+            Object.keys(dailyData).forEach(stuId => {
+              const rec = dailyData[stuId];
+              if ((classFilter === "ALL" || rec.class === classFilter) && (!studentFilter || stuId === studentFilter)) {
+                currentQueryResult.push({
+                  id: stuId,
+                  name: rec.name,
+                  class: rec.class,
+                  date: dateKey,
+                  checkIn: rec.checkInTime || "---",
+                  checkOut: rec.checkOutTime || "---",
+                  punctuality: rec.punctuality || "On Time"
+                });
+              }
+            });
+          }
+        });
+
+        renderAnalyticsUI(currentQueryResult, scope);
+      });
+    }
+
+    function isDateInSameWeek(d1, d2) {
+      const date1 = new Date(d1);
+      const date2 = new Date(d2);
+      const diffTime = Math.abs(date2 - date1);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 7;
+    }
+
+    function renderAnalyticsUI(records, scope) {
+      const totalPresent = records.length;
+      const onTimeCount = records.filter(r => !r.punctuality.includes("Late Arrival")).length;
+      const lateCount = records.filter(r => r.punctuality.includes("Late Arrival")).length;
+      const departedCount = records.filter(r => r.checkOut && r.checkOut !== "---").length;
+
+      document.getElementById("stat-present").innerText = totalPresent;
+      document.getElementById("stat-ontime").innerText = onTimeCount;
+      document.getElementById("stat-late").innerText = lateCount;
+      document.getElementById("stat-departed").innerText = departedCount;
+
+      const onTimeRate = totalPresent > 0 ? Math.round((onTimeCount / totalPresent) * 100) : 0;
+      const lateRate = totalPresent > 0 ? Math.round((lateCount / totalPresent) * 100) : 0;
+
+      document.getElementById("stat-present-rate").innerText = `${totalPresent} Logged Records`;
+      document.getElementById("stat-ontime-rate").innerText = `${onTimeRate}% Punctuality Rate`;
+      document.getElementById("stat-late-rate").innerText = `${lateRate}% Off Cutoff Rate`;
+      document.getElementById("stat-departed-rate").innerText = `${departedCount} Signed Out`;
+
+      renderTableData(records);
+      updateCharts(onTimeCount, lateCount, records, scope);
+    }
+
+    function renderTableData(records) {
+      const tbody = document.getElementById("report-table-body");
+      tbody.innerHTML = "";
+
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">No matching attendance logs found for specified metric filters.</td></tr>`;
+        document.getElementById("report-summary").innerText = "No records found.";
+        return;
+      }
+
+      document.getElementById("report-summary").innerText = `Showing ${records.length} record(s).`;
+
+      records.forEach(rec => {
+        const isLate = rec.punctuality.includes("Late Arrival");
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-bold text-slate-900 font-mono">${rec.id}</td>
+            <td class="p-3 font-semibold">${rec.name}</td>
+            <td class="p-3 text-slate-700">${rec.class}</td>
+            <td class="p-3 text-slate-500">${rec.date}</td>
+            <td class="p-3 font-medium text-emerald-700">${rec.checkIn}</td>
+            <td class="p-3 font-medium text-blue-700">${rec.checkOut}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isLate ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+                ${rec.punctuality}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function updateCharts(onTime, late, records, scope) {
+      const pieCtx = document.getElementById('punctualityPieChart').getContext('2d');
+      if (pieChartInstance) pieChartInstance.destroy();
+
+      pieChartInstance = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['On-Time', 'Late'],
+          datasets: [{
+            data: [onTime, late],
+            backgroundColor: ['#16a34a', '#f43f5e'],
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const barCtx = document.getElementById('attendanceChart').getContext('2d');
+      if (barChartInstance) barChartInstance.destroy();
+
+      const countsMap = {};
+      records.forEach(r => {
+        const key = scope === 'daily' ? r.class : r.date;
+        countsMap[key] = (countsMap[key] || 0) + 1;
+      });
+
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(countsMap).length > 0 ? Object.keys(countsMap) : ['No Data'],
+          datasets: [{
+            label: 'Attendance Count',
+            data: Object.values(countsMap).length > 0 ? Object.values(countsMap) : [0],
+            backgroundColor: '#22c55e'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // ------------------------------------------------------------------
+    // EXPORT PDF FOR A SPECIFIC CLASS (ATTENDANCE LOGS)
+    // ------------------------------------------------------------------
+    async function exportClassPDF() {
+      const selectedClass = document.getElementById("export-class-select").value;
+      const scope = document.getElementById("metric-scope").value.toUpperCase();
+      
+      let classRecords = currentQueryResult.filter(r => r.class === selectedClass);
+
+      if (classRecords.length === 0) {
+        const dateStr = document.getElementById("metric-date").value || new Date().toISOString().split("T")[0];
+        const snapshot = await db.ref(`attendance/${dateStr}`).once("value");
+
+        if (snapshot.exists()) {
+          const dailyData = snapshot.val();
+          Object.keys(dailyData).forEach(stuId => {
+            const rec = dailyData[stuId];
+            if (rec.class === selectedClass) {
+              classRecords.push({
+                id: stuId,
+                name: rec.name,
+                class: rec.class,
+                date: dateStr,
+                checkIn: rec.checkInTime || "---",
+                checkOut: rec.checkOutTime || "---",
+                punctuality: rec.punctuality || "On Time"
+              });
+            }
+          });
+        }
+      }
+
+      if (classRecords.length === 0) {
+        return alert(`No attendance records found for class: ${selectedClass}.`);
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text(`Tessy International Schools - Class Attendance Report`, 14, 15);
+      doc.setFontSize(11);
+      doc.text(`Class: ${selectedClass} | Scope: ${scope} | Generated: ${new Date().toLocaleString()}`, 14, 23);
+
+      doc.autoTable({
+        startY: 28,
+        head: [['Student ID', 'Full Name', 'Class Grade', 'Date', 'Check In', 'Check Out', 'Punctuality']],
+        body: classRecords.map(r => [r.id, r.name, r.class, r.date, r.checkIn, r.checkOut, r.punctuality]),
+        headStyles: { fillColor: [79, 70, 229] },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
+      });
+
+      const safeClassName = selectedClass.replace(/\s+/g, '_');
+      const filename = `Tessy_Attendance_${safeClassName}_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+    }
+
+    // ------------------------------------------------------------------
+    // GENERAL EXPORT ENGINE (CSV / FULL PDF)
+    // ------------------------------------------------------------------
+    function exportReport(format) {
+      if (currentQueryResult.length === 0) return alert("Generate a report first before exporting.");
+      const scope = document.getElementById("metric-scope").value.toUpperCase();
+      const filename = `Tessy_Attendance_${scope}_${new Date().toISOString().split("T")[0]}`;
+
+      if (format === "csv") {
+        let csv = "Student ID,Full Name,Class Grade,Date,Check In,Check Out,Punctuality\n";
+        currentQueryResult.forEach(r => { csv += `"${r.id}","${r.name}","${r.class}","${r.date}","${r.checkIn}","${r.checkOut}","${r.punctuality}"\n`; });
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${filename}.csv`;
+        a.click();
+      } else {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text("Tessy International Schools - Attendance Metrics", 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Scope: ${scope} | Generated: ${new Date().toLocaleString()}`, 14, 22);
+
+        doc.autoTable({
+          startY: 28,
+          head: [['Student ID', 'Full Name', 'Class Grade', 'Date', 'Check In', 'Check Out', 'Punctuality']],
+          body: currentQueryResult.map(r => [r.id, r.name, r.class, r.date, r.checkIn, r.checkOut, r.punctuality]),
+          headStyles: { fillColor: [22, 163, 74] }
+        });
+        doc.save(`${filename}.pdf`);
+      }
+    }
+  </script>
+</body>
+</html>
