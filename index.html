@@ -10,8 +10,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- PDF & CSV Export Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
 
   <!-- Chart.js for Admin Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -30,7 +30,6 @@
     }
   </script>
   <style>
-    /* Background Image Transition Effect for Sign-On Screen Only */
     @keyframes bgSlide {
       0%, 30% { background-image: url('2.jpg'); }
       33%, 63% { background-image: url('3.jpg'); }
@@ -39,13 +38,23 @@
     }
     .dynamic-login-bg {
       animation: bgSlide 18s infinite ease-in-out;
+      background-size: contain !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-color: #0b1f3a !important;
+    }
+    body, #interface-kiosk, #interface-admin {
+      background-size: contain !important;
+      background-repeat: no-repeat !important;
+      background-position: center !important;
+      background-color: #0b1f3a !important;
     }
   </style>
 </head>
 <body class="bg-slate-900 font-sans text-slate-800 min-h-screen flex flex-col relative overflow-x-hidden">
 
   <!-- EDIT STUDENT MODAL -->
-  <div id="edit-student-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+  <div id="edit-student-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white w-full max-w-md rounded-3xl p-8 border shadow-2xl relative z-10">
       <div class="text-center mb-6">
         <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
@@ -118,8 +127,28 @@
     </div>
   </div>
 
+  <!-- SECOND SECURITY GATE: ADMIN PASSCODE MODAL (7794) -->
+  <div id="admin-passcode-modal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white/95 backdrop-blur-md w-full max-w-sm rounded-3xl p-8 border border-white/20 shadow-2xl relative z-10 text-center">
+      <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-inner">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h3 class="text-lg font-extrabold text-slate-900 uppercase tracking-tight">Admin Passcode Required</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">Enter 4-digit security PIN to access the Admin Portal.</p>
+      
+      <form onsubmit="verifyAdminPasscode(event)" class="space-y-4">
+        <input type="password" id="admin-passcode-pin" maxlength="4" placeholder="••••" required class="w-full p-3.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-center tracking-[0.5em] font-mono text-xl focus:ring-2 focus:ring-brand-500 focus:outline-none font-bold">
+        <p id="passcode-error-msg" class="text-xs text-rose-600 font-semibold hidden"><i class="fa-solid fa-circle-exclamation"></i> Incorrect Passcode PIN!</p>
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeAdminPasscodeModal()" class="w-1/2 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition">Cancel</button>
+          <button type="submit" class="w-1/2 py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl transition shadow-md">Verify</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- POPUP MODAL OVERLAY (TOUCH KIOSK GREETING & TIMER) -->
-  <div id="greeting-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <div id="greeting-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 flex items-center justify-center p-4 hidden">
     <div id="greeting-banner" class="w-full max-w-xl rounded-3xl p-8 border shadow-2xl text-center relative bg-white z-10">
       
       <!-- COUNTDOWN TIMER BADGE -->
@@ -170,13 +199,11 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 relative z-10">
 
-    <!-- INTERFACE 1: LARGE TOUCHSCREEN ENTRANCE KIOSK (Background: 5.jpg spanning full viewport) -->
+    <!-- INTERFACE 1: LARGE TOUCHSCREEN ENTRANCE KIOSK -->
     <div id="interface-kiosk" class="space-y-6 hidden fixed inset-0 top-[81px] z-30 overflow-y-auto p-4 sm:p-8 bg-cover bg-center flex flex-col items-center justify-start" style="background-image: url('5.jpg');">
-      <!-- Dark Overlay for Kiosk -->
-      <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-0"></div>
+      <div class="absolute inset-0 bg-slate-950/25 backdrop-blur-[0.5px] z-0"></div>
 
       <div class="relative z-10 space-y-6 w-full max-w-2xl my-auto py-6">
-        <!-- Original Blue Banner Header -->
         <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 rounded-3xl p-6 sm:p-8 text-center shadow-2xl text-white relative overflow-hidden border border-blue-500/30">
           <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent pointer-events-none"></div>
           <div class="relative z-10">
@@ -199,12 +226,12 @@
             <span class="font-bold text-slate-700">Official Start Cutoff Time:</span>
           </div>
           <div class="flex items-center gap-2">
-            <input type="time" id="school-start-time" value="07:30" class="p-2 border rounded-lg font-bold bg-slate-50 text-slate-800">
-            <span class="text-slate-500 text-[11px]">(Scans after 07:30 AM flag as LATE)</span>
+            <input type="time" id="school-start-time" value="07:30" disabled class="p-2 border rounded-lg font-bold bg-slate-100 text-slate-600 cursor-not-allowed">
+            <span id="cutoff-status-text" class="text-slate-500 text-[11px]">(Locked for students)</span>
           </div>
         </div>
 
-        <!-- TOUCHSCREEN NUMBER PAD & DISPLAY (Larger & Prominent) -->
+        <!-- TOUCHSCREEN NUMBER PAD & DISPLAY -->
         <div class="bg-white/95 backdrop-blur-md p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-2xl flex flex-col items-center">
           <div class="w-full bg-slate-900 text-emerald-400 font-mono text-4xl font-extrabold p-5 rounded-2xl text-center tracking-widest shadow-inner mb-6 border-2 border-slate-700 min-h-[78px] flex items-center justify-center">
             <span id="kiosk-id-display">TISS</span>
@@ -239,10 +266,9 @@
       </div>
     </div>
 
-    <!-- INTERFACE 2: ADMIN ANALYTICAL PORTAL & MANAGEMENT (Background: 4.jpg) -->
+    <!-- INTERFACE 2: ADMIN ANALYTICAL PORTAL & MANAGEMENT -->
     <div id="interface-admin" class="hidden space-y-8 relative min-h-[85vh] rounded-3xl p-4 sm:p-6 overflow-hidden bg-cover bg-center" style="background-image: url('4.jpg');">
-      <!-- Dark Overlay for Admin Portal -->
-      <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px] z-0"></div>
+      <div class="absolute inset-0 bg-slate-950/25 backdrop-blur-[0.5px] z-0"></div>
 
       <div class="relative z-10 space-y-8">
         
@@ -357,6 +383,37 @@
                 <canvas id="punctualityPieChart"></canvas>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- AUTHORIZED ADMINISTRATOR STAFF WHITELIST -->
+        <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
+          <h2 class="font-bold text-slate-900 text-base border-b pb-2 flex items-center gap-2">
+            <i class="fa-solid fa-user-shield text-brand-600"></i> Authorized Administrator Staff Whitelist
+          </h2>
+          <p class="text-xs text-slate-500">Add new staff email addresses. This registers them in the database for portal access.</p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <input type="email" id="new-admin-email" placeholder="staff.email@tessy.edu" class="p-2.5 border border-slate-300 rounded-xl bg-slate-50 font-medium">
+            <input type="text" id="new-admin-name" placeholder="Full Name (e.g. Mr. John)" class="p-2.5 border border-slate-300 rounded-xl bg-slate-50 font-medium">
+            <button onclick="addNewAdminStaff()" class="py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-user-plus"></i> Register Staff
+            </button>
+          </div>
+
+          <div class="overflow-x-auto max-h-[200px] border rounded-xl mt-3">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
+                <tr>
+                  <th class="p-2.5">Staff Name</th>
+                  <th class="p-2.5">Email / Username</th>
+                  <th class="p-2.5 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-staff-table-body" class="divide-y divide-slate-100">
+                <tr><td colspan="3" class="p-3 text-center text-slate-400">Loading authorized admin staff...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -510,7 +567,7 @@
 
         </div>
 
-        <!-- STUDENT DIRECTORY ROSTER (SEARCH, EDIT, DELETE & PDF ROSTER EXPORT) -->
+        <!-- STUDENT DIRECTORY ROSTER -->
         <div class="bg-white/95 backdrop-blur-md p-6 rounded-2xl border border-slate-200 shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
             <h2 class="font-bold text-slate-900 text-base flex items-center gap-2">
@@ -518,13 +575,11 @@
             </h2>
             
             <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <!-- SEARCH INPUT BAR -->
               <div class="relative w-full sm:w-52">
                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                 <input type="text" id="roster-search-input" onkeyup="filterRoster()" placeholder="Search name, ID, class..." class="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
               </div>
 
-              <!-- CLASS ATTENDANCE INFORMATION PDF EXPORT CONTROLS -->
               <select id="roster-class-select" class="p-1.5 border border-slate-300 rounded-xl bg-slate-50 font-bold text-xs text-slate-800">
                 <optgroup label="Nursery">
                   <option value="Toddler">Toddler</option>
@@ -587,7 +642,6 @@
             <div id="report-summary" class="text-xs font-semibold text-slate-500">Ready to query...</div>
             
             <div class="flex flex-wrap items-center gap-2">
-              <!-- INDIVIDUAL CLASS ATTENDANCE PDF EXPORTER -->
               <select id="export-class-select" class="p-2 border border-slate-300 rounded-lg bg-slate-50 font-bold text-xs text-slate-800">
                 <optgroup label="Nursery">
                   <option value="Toddler">Toddler</option>
@@ -655,19 +709,14 @@
     </div>
   </main>
 
-  <!-- ADMIN LOGIN MODAL (THE GATE) WITH DYNAMIC IMAGE ROTATION BG (2.jpg, 3.jpg, 1.jpg) -->
+  <!-- ADMIN LOGIN MODAL -->
   <div id="admin-login-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center dynamic-login-bg">
-    <!-- Darker gradient overlay for ultimate readability & elegance -->
-    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-0"></div>
+    <div class="absolute inset-0 bg-slate-950/25 backdrop-blur-[0.5px] z-0"></div>
 
     <div class="bg-white/95 backdrop-blur-md w-full max-w-md rounded-3xl p-8 border border-white/20 shadow-2xl relative z-10 transform transition-all">
-      
-      <!-- Appealing Sweet & Fun Header Logo Placement -->
       <div class="text-center mb-6">
         <div class="relative w-20 h-20 mx-auto mb-3">
-          <!-- Subtle glowing backdrop ring -->
           <div class="absolute inset-0 bg-brand-500/20 rounded-full blur-md transform scale-110"></div>
-          <!-- Logo Container -->
           <div class="relative w-20 h-20 bg-gradient-to-tr from-brand-50 to-emerald-100 rounded-2xl flex items-center justify-center p-2 border-2 border-brand-200 shadow-inner">
             <img src="logo.png" alt="Tessy International Schools Logo" class="w-full h-full object-contain drop-shadow-sm" onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=TIS';">
           </div>
@@ -679,8 +728,8 @@
 
       <form onsubmit="handleAdminLogin(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Admin Username</label>
-          <input type="text" id="admin-user" placeholder="admin" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
+          <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Admin Username / Email</label>
+          <input type="text" id="admin-user" placeholder="admin or email@school.com" required class="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 text-slate-900 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none font-semibold">
         </div>
 
         <div>
@@ -703,6 +752,8 @@
     // ------------------------------------------------------------------
     // FIREBASE INITIALIZATION
     // ------------------------------------------------------------------
+    const ADMIN_PASSCODE = "7794";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAhDcFIRavdq6ugaCTTNrS9GG4JZZ1AwpE",
       authDomain: "tessyattendance-8ac71.firebaseapp.com",
@@ -720,13 +771,13 @@
     db.goOffline();
     db.goOnline();
 
-    // APP GLOBAL STATES
     let kioskBuffer = "";
     let currentQueryResult = [];
     let allEnrolledStudents = {}; 
     let modalTimer = null;
     let countdownVal = 5;
     let isAdminAuthenticated = false;
+    let isAdminUnlocked = false;
 
     let barChartInstance = null;
     let pieChartInstance = null;
@@ -737,22 +788,127 @@
       document.getElementById("metric-end-date").valueAsDate = new Date();
       loadTermDates();
       loadStudentRoster();
+      loadAdminStaffList();
       updateDisplay();
 
-      // THE GATE: Lock site immediately on load by showing login modal and hiding interfaces
+      isAdminAuthenticated = false;
+      isAdminUnlocked = false;
+      applyCutoffPermissions();
       document.getElementById("admin-login-modal").classList.remove("hidden");
+      document.getElementById("admin-passcode-modal").classList.add("hidden");
       document.getElementById("interface-kiosk").classList.add("hidden");
       document.getElementById("interface-admin").classList.add("hidden");
     });
 
-    // ------------------------------------------------------------------
-    // ADMIN AUTHENTICATION CONTROLS
-    // ------------------------------------------------------------------
-    function requestAdminAccess() {
+    function applyCutoffPermissions() {
+      const cutoffInput = document.getElementById("school-start-time");
+      const statusText = document.getElementById("cutoff-status-text");
       if (isAdminAuthenticated) {
+        cutoffInput.removeAttribute("disabled");
+        cutoffInput.className = "p-2 border rounded-lg font-bold bg-white text-slate-800 shadow-sm";
+        statusText.innerText = "(Editable by Admin)";
+      } else {
+        cutoffInput.setAttribute("disabled", "true");
+        cutoffInput.className = "p-2 border rounded-lg font-bold bg-slate-100 text-slate-600 cursor-not-allowed";
+        statusText.innerText = "(Locked for students - Read only)";
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // ADMIN STAFF REGISTRATION
+    // ------------------------------------------------------------------
+    async function addNewAdminStaff() {
+      const emailInput = document.getElementById("new-admin-email").value.trim().toLowerCase();
+      const nameInput = document.getElementById("new-admin-name").value.trim();
+
+      if (!emailInput || !nameInput) {
+        return alert("Please enter both the staff email and their full name.");
+      }
+
+      const staffKey = emailInput.replace(/[.#$\/\[\]]/g, "_");
+      
+      try {
+        await db.ref(`authorized_admins/${staffKey}`).set({
+          name: nameInput,
+          email: emailInput,
+          createdAt: new Date().toISOString()
+        });
+
+        alert(`Admin staff "${nameInput}" registered successfully in database.`);
+        document.getElementById("new-admin-email").value = "";
+        document.getElementById("new-admin-name").value = "";
+        loadAdminStaffList();
+      } catch (err) {
+        alert("Error saving admin staff: " + err.message);
+      }
+    }
+
+    function loadAdminStaffList() {
+      db.ref("authorized_admins").on("value", snapshot => {
+        const tbody = document.getElementById("admin-staff-table-body");
+        tbody.innerHTML = "";
+
+        const admins = snapshot.exists() ? snapshot.val() : {};
+        const keys = Object.keys(admins);
+
+        if (keys.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td class="p-2.5 font-semibold text-slate-800">System Principal / Admin</td>
+              <td class="p-2.5 font-mono text-slate-600">admin</td>
+              <td class="p-2.5 text-center text-slate-400">Default</td>
+            </tr>
+          `;
+          return;
+        }
+
+        keys.forEach(k => {
+          const staff = admins[k];
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-semibold text-slate-800">${staff.name}</td>
+              <td class="p-2.5 font-mono text-slate-600">${staff.email}</td>
+              <td class="p-2.5 text-center">
+                <button onclick="removeAdminStaff('${k}')" class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded text-[11px] font-bold">Remove</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    async function removeAdminStaff(key) {
+      if (!confirm("Are you sure you want to remove this admin staff member?")) return;
+      await db.ref(`authorized_admins/${key}`).remove();
+      alert("Admin staff successfully removed.");
+    }
+
+    function requestAdminAccess() {
+      if (isAdminUnlocked) {
         switchInterface('admin');
       } else {
-        document.getElementById("admin-login-modal").classList.remove("hidden");
+        document.getElementById("admin-passcode-modal").classList.remove("hidden");
+        document.getElementById("admin-passcode-pin").value = "";
+        document.getElementById("passcode-error-msg").classList.add("hidden");
+      }
+    }
+
+    function closeAdminPasscodeModal() {
+      document.getElementById("admin-passcode-modal").classList.add("hidden");
+      document.getElementById("passcode-error-msg").classList.add("hidden");
+    }
+
+    function verifyAdminPasscode(event) {
+      event.preventDefault();
+      const enteredPin = document.getElementById("admin-passcode-pin").value.trim();
+
+      if (enteredPin === ADMIN_PASSCODE) {
+        isAdminUnlocked = true;
+        closeAdminPasscodeModal();
+        switchInterface('admin');
+        calculateAnalytics();
+      } else {
+        document.getElementById("passcode-error-msg").classList.remove("hidden");
       }
     }
 
@@ -765,17 +921,31 @@
       document.getElementById("login-error-msg").classList.add("hidden");
     }
 
-    function handleAdminLogin(event) {
+    async function handleAdminLogin(event) {
       event.preventDefault();
-      const user = document.getElementById("admin-user").value.trim();
+      const user = document.getElementById("admin-user").value.trim().toLowerCase();
       const pass = document.getElementById("admin-pass").value.trim();
 
-      if (user === "admin" && pass === "admin123") {
+      let isValidAdmin = (user === "admin" && pass === "admin123");
+
+      if (!isValidAdmin) {
+        const snapshot = await db.ref("authorized_admins").once("value");
+        if (snapshot.exists()) {
+          const admins = snapshot.val();
+          Object.values(admins).forEach(staff => {
+            if (staff.email === user && pass === "admin123") {
+              isValidAdmin = true;
+            }
+          });
+        }
+      }
+
+      if (isValidAdmin) {
         isAdminAuthenticated = true;
+        applyCutoffPermissions();
         closeAdminLoginModal();
         document.getElementById("admin-logout-btn").classList.remove("hidden");
         switchInterface('kiosk');
-        calculateAnalytics();
       } else {
         document.getElementById("login-error-msg").classList.remove("hidden");
       }
@@ -783,17 +953,17 @@
 
     function logoutAdmin() {
       isAdminAuthenticated = false;
+      isAdminUnlocked = false;
+      applyCutoffPermissions();
       document.getElementById("admin-logout-btn").classList.add("hidden");
       document.getElementById("interface-kiosk").classList.add("hidden");
       document.getElementById("interface-admin").classList.add("hidden");
+      document.getElementById("admin-passcode-modal").classList.add("hidden");
       document.getElementById("admin-login-modal").classList.remove("hidden");
       document.getElementById("admin-user").value = "";
       document.getElementById("admin-pass").value = "";
     }
 
-    // ------------------------------------------------------------------
-    // INTERFACE SWITCHING
-    // ------------------------------------------------------------------
     function switchInterface(mode) {
       const kioskView = document.getElementById("interface-kiosk");
       const adminView = document.getElementById("interface-admin");
@@ -801,13 +971,17 @@
       const adminBtn = document.getElementById("tab-admin-btn");
 
       if (mode === "kiosk") {
-        if (!isAdminAuthenticated) return requestAdminAccess();
+        if (!isAdminAuthenticated) return;
         kioskView.classList.remove("hidden");
         adminView.classList.add("hidden");
         kioskBtn.className = "px-5 py-2 font-bold text-xs rounded-lg bg-brand-600 text-white shadow-sm flex items-center gap-2";
         adminBtn.className = "px-5 py-2 font-bold text-xs rounded-lg text-slate-600 hover:text-slate-900 flex items-center gap-2";
       } else {
-        if (!isAdminAuthenticated) return requestAdminAccess();
+        if (!isAdminAuthenticated) return;
+        if (!isAdminUnlocked) {
+          requestAdminAccess();
+          return;
+        }
         adminView.classList.remove("hidden");
         kioskView.classList.add("hidden");
         adminBtn.className = "px-5 py-2 font-bold text-xs rounded-lg bg-brand-600 text-white shadow-sm flex items-center gap-2";
@@ -815,9 +989,6 @@
       }
     }
 
-    // ------------------------------------------------------------------
-    // TOUCH KEYPAD, AUDIO ENGINE & SPEECH SYNTHESIS
-    // ------------------------------------------------------------------
     function pressKey(val) {
       if (kioskBuffer.length < 4) { 
         kioskBuffer += val; 
@@ -839,65 +1010,17 @@
       document.getElementById("kiosk-id-display").innerText = kioskBuffer ? kioskBuffer : "----";
     }
 
-    function playAttendanceJingle() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const melody = [523.25, 659.25, 783.99, 1046.50];
-        melody.forEach((freq, index) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.1);
-          gain.gain.setValueAtTime(0.2, audioCtx.currentTime + index * 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.1 + 0.35);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(audioCtx.currentTime + index * 0.1);
-          osc.stop(audioCtx.currentTime + index * 0.1 + 0.35);
-        });
-      } catch (err) { console.log(err); }
-    }
-
-    function playCustomVoice(studentName, mode) {
-      playAttendanceJingle();
-
+    function playCustomVoice(mode) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
-        
-        let message = "";
-        if (mode === "check-in") {
-          message = `HOS says WELCOME BACK, ${studentName}! Have an inspiring and productive day of learning.`;
-        } else {
-          message = `HOS says GOODBYE, ${studentName}! Remember to review your lessons and stay curious.`;
-        }
-
+        let message = (mode === "check-in") ? "WELCOME" : "Goodbye";
         const speech = new SpeechSynthesisUtterance(message);
-        const voices = window.speechSynthesis.getVoices();
-
-        if (voices.length > 0) {
-          if (mode === "check-in") {
-            const maleVoice = voices.find(v => v.name.toLowerCase().includes("male") || v.name.toLowerCase().includes("david") || v.name.toLowerCase().includes("george"));
-            if (maleVoice) speech.voice = maleVoice;
-            speech.pitch = 1.05;
-            speech.rate = 0.98;
-          } else {
-            const femaleVoice = voices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("hazel") || v.name.toLowerCase().includes("google us english"));
-            if (femaleVoice) speech.voice = femaleVoice;
-            speech.pitch = 1.1;
-            speech.rate = 0.95;
-          }
-        } else {
-          speech.pitch = 1.0;
-          speech.rate = 0.95;
-        }
-
+        speech.pitch = 1.0;
+        speech.rate = 1.0;
         window.speechSynthesis.speak(speech);
       }
     }
 
-    // ------------------------------------------------------------------
-    // ATTENDANCE LOGGING PROCESSOR (IDENTIFIES BY 4-DIGIT ID OR 4-DIGIT PIN)
-    // ------------------------------------------------------------------
     async function submitKioskTap() {
       const inputVal = kioskBuffer.trim();
       if (!inputVal || inputVal.length !== 4) {
@@ -962,9 +1085,9 @@
         });
       }
 
-      playCustomVoice(student.name, mode);
+      playCustomVoice(mode);
       displayGreetingPopup(student, mode, logTime, isLate);
-      if (isAdminAuthenticated) calculateAnalytics();
+      if (isAdminUnlocked) calculateAnalytics();
     }
 
     function displayGreetingPopup(student, mode, timeStr, isLate) {
@@ -1021,9 +1144,6 @@
       clearKeypad();
     }
 
-    // ------------------------------------------------------------------
-    // AUTOMATIC UNIQUE 4-DIGIT ID AND 4-DIGIT PASSCODE GENERATOR
-    // ------------------------------------------------------------------
     function generateUnique4DigitCode(existingStudents, fieldName) {
       let candidate = "";
       let isUnique = false;
@@ -1094,9 +1214,6 @@
       }
     }
 
-    // ------------------------------------------------------------------
-    // STUDENT ROSTER, SEARCH, EDITING & DELETION MANAGEMENT
-    // ------------------------------------------------------------------
     async function loadStudentRoster() {
       db.ref("students").on("value", snapshot => {
         allEnrolledStudents = snapshot.exists() ? snapshot.val() : {};
@@ -1237,9 +1354,6 @@
       alert(`Successfully deleted ${deleteCount} student(s) from class ${selectedClass}.`);
     }
 
-    // ------------------------------------------------------------------
-    // EXPORT CLASS ATTENDANCE INFORMATION TO PDF
-    // ------------------------------------------------------------------
     async function exportClassRosterPDF() {
       const targetClass = document.getElementById("roster-class-select").value;
 
@@ -1277,9 +1391,6 @@
       doc.save(filename);
     }
 
-    // ------------------------------------------------------------------
-    // ACADEMIC TERM MANAGEMENT
-    // ------------------------------------------------------------------
     function saveTermDates() {
       const termData = {
         term1: { start: document.getElementById("term1-start").value, end: document.getElementById("term1-end").value },
@@ -1312,9 +1423,6 @@
       });
     }
 
-    // ------------------------------------------------------------------
-    // ADVANCED ATTENDANCE ANALYTICS ENGINE
-    // ------------------------------------------------------------------
     function toggleScopeInputs() {
       const scope = document.getElementById("metric-scope").value;
       const dateBox = document.getElementById("metric-date-box");
@@ -1479,9 +1587,6 @@
       });
     }
 
-    // ------------------------------------------------------------------
-    // EXPORT PDF FOR A SPECIFIC CLASS (ATTENDANCE LOGS)
-    // ------------------------------------------------------------------
     async function exportClassPDF() {
       const selectedClass = document.getElementById("export-class-select").value;
       const scope = document.getElementById("metric-scope").value.toUpperCase();
@@ -1536,10 +1641,7 @@
       doc.save(filename);
     }
 
-    // ------------------------------------------------------------------
-    // GENERAL EXPORT ENGINE (CSV / FULL PDF)
-    // ------------------------------------------------------------------
-    function exportReport(format) {
+    exportReport = function(format) {
       if (currentQueryResult.length === 0) return alert("Generate a report first before exporting.");
       const scope = document.getElementById("metric-scope").value.toUpperCase();
       const filename = `Tessy_Attendance_${scope}_${new Date().toISOString().split("T")[0]}`;
